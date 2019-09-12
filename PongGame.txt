@@ -1,0 +1,165 @@
+//Anton Durham
+//Desc: This program is designed to be an led based game that simulates Pong.
+//4/4/2019
+int ledpin[8] = {4,5,6,7,8,9,10,11};
+//declare all the pin positions in an array
+double tempo = 1000;
+//set the pong "ball/light" frequency
+int buttonPin1 = 2;
+int buttonPin2 = 3;
+int buttonstate1 = 0;
+int i = 0;
+static int gamec = 0;
+unsigned long lastInterrupt;
+int buttonstate2 = 0;
+bool gameon = false;
+bool p1 = false;
+bool p2 = false;
+bool p1loss = false;
+bool p2loss = false;
+//Initially, it is not player1 or player2's turn until the game has actually started. Hence all the false booleans
+void setup() {
+  pinMode(ledpin[0], OUTPUT);
+  pinMode(buttonPin1, INPUT_PULLUP);
+  pinMode(buttonPin2, INPUT_PULLUP);
+  pinMode(ledpin[1], OUTPUT);
+  pinMode(ledpin[2], OUTPUT);
+  pinMode(ledpin[3], OUTPUT);
+  pinMode(ledpin[4], OUTPUT);
+  pinMode(ledpin[5], OUTPUT);
+  pinMode(ledpin[6], OUTPUT);
+  pinMode(ledpin[7], OUTPUT);
+  Serial.begin(9600);
+
+  attachInterrupt(digitalPinToInterrupt(buttonPin1), button1interrupt, RISING); 
+  attachInterrupt(digitalPinToInterrupt(buttonPin2), button2interrupt, RISING);
+  //Button interrupt is our ISR(Interrupt service routine)
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+   buttonstate1 = digitalRead(buttonPin1);
+   buttonstate2 = digitalRead(buttonPin2);
+   
+    if (i == 0 && digitalRead(ledpin[6]) == LOW && gameon)
+    { 
+      winnerflash(0);
+    }
+    if (p2loss)
+    {
+      winnerflash(1);
+    }
+//If player2 clicks their button and the successful pin is not on, player 2 loses
+    if (p1loss)
+    {
+      winnerflash(0);
+    }
+//If player1 clicks their button and the successful pin is not on, player 1 loses.
+    if (i == 8 && digitalRead(ledpin[0]) == LOW)  
+    { 
+      winnerflash(1);
+    }
+    
+   //Serial.println(gameon);
+   Serial.println(digitalRead(ledpin[7]));
+   //Serial.println(i);
+    if(i < 8 && gameon && p1)
+    {
+     digitalWrite(ledpin[i+1], HIGH);
+     delay(tempo);
+     digitalWrite(ledpin[i+1], LOW);
+     i++;
+    }
+//when the player presses the button on their turn, the bool p1 or p2 will be true. These if statements both
+//
+   if(i >= 0 && gameon && p2)
+   {
+    digitalWrite(ledpin[i-1], HIGH);
+     delay(tempo);
+     digitalWrite(ledpin[i-1], LOW);
+     i--;
+   }
+   
+}
+void button2interrupt()
+{
+  
+  tempo = (tempo - 50);
+   if(millis() - lastInterrupt > 200)
+  {
+    if(digitalRead(ledpin[6]) != HIGH)
+    {
+      p2loss = true;
+    }
+
+    if(digitalRead(ledpin[6]) == HIGH)
+    {
+      Serial.println(tempo);
+      Serial.println("Interrupt 2");
+     p1 = false;
+     p2 = true;
+    }
+   lastInterrupt = millis();
+   return;
+  }
+}
+void button1interrupt()
+{
+  tempo = (tempo - 75);
+  
+  if(millis() - lastInterrupt > 200)
+  {
+    if(digitalRead(ledpin[1])!= true && gameon)
+    {
+      p1loss = true;
+    }
+    gameon = true;
+    
+  Serial.println("Interrupt 1");
+  p1 = true;
+  p2 = false;
+
+  lastInterrupt = millis();
+  return;
+  
+  }
+}
+void winnerflash(bool w)
+{
+  for(int i = 0; i <7; i++)
+  {
+    digitalWrite(ledpin[i], LOW);
+  }
+  if(w == true)
+  {
+    Serial.println("W is true");
+    for(int i = 0; i <3; i++)
+    {
+    digitalWrite(ledpin[0], HIGH);
+    delay(1000);
+    digitalWrite(ledpin[0], LOW);
+    delay(1000);
+    }
+  }
+//These for loops just flash the light's three times to indicate which player won.
+  if(w == false)
+  {
+    Serial.println("W is false");
+    for(int j = 0; j < 3; j++)
+    {
+    digitalWrite(ledpin[7], HIGH);
+    //delay takes one argument, number of milliseconds to delay execution
+    delay(1000);
+    digitalWrite(ledpin[7], LOW);
+    delay(1000);
+    }
+  }
+  p1 = false;
+  p2 = false;
+  i = 0;
+  gameon = false;
+  tempo = 1000;
+  p1loss = false;
+  p2loss = false;
+//Reset all the initial values to reset the game.
+}
